@@ -11,18 +11,8 @@ local InventoryService = Knit.CreateService({
 	},
 })
 
-export type Item = {
-    Name: string,
-    Description: string,
-}
-
 --[=[
-    @param player: Player
-    @return table
-    @example
-    local playerData = InventoryService:GetPlayerInventory(Players.Sci_Punk)
-    @description
-    Fetches the player's inventory data from the data store service.
+    Fetches the player's inventory data.
 ]=]
 function InventoryService:GetPlayerInventory(player: Player)
 	local playerData = self._DataStoreService:GetData(player)
@@ -33,18 +23,39 @@ function InventoryService.Client:GetPlayerInventory(player: Player)
 	return self.Server:GetPlayerInventory(player)
 end
 
-function InventoryService:AddItem(player: Player, item: Item)
+function InventoryService:AddItem(player: Player, item: table)
 	local playerData = self._DataStoreService:GetData(player)
-	table.insert(playerData.Items, item)
+	
+	-- Stacking Logic: Check if item already exists by ItemID
+	local existingItem = nil
+	for _, v in ipairs(playerData.Items) do
+		if v.ItemID == item.ItemID then
+			existingItem = v
+			break
+		end
+	end
+
+	if existingItem then
+		existingItem.Quantity = (existingItem.Quantity or 1) + 1
+	else
+		item.Quantity = 1
+		table.insert(playerData.Items, item)
+	end
+
 	self._DataStoreService:UpdateProfileKeyValue(player, "Items", playerData.Items)
 	self.Client.InventoryChanged:Fire(player, playerData.Items)
 end
 
-function InventoryService:RemoveItem(player: Player, item: Item)
+function InventoryService:RemoveItem(player: Player, item: table)
 	local playerData = self._DataStoreService:GetData(player)
-	for i, v in (playerData.Items) do
-		if v.GUID == item.GUID then
-			table.remove(playerData.Items, i)
+	for i, v in ipairs(playerData.Items) do
+		-- For removing specific stacks or items
+		if v.ItemID == item.ItemID then
+			if (v.Quantity or 1) > 1 then
+				v.Quantity -= 1
+			else
+				table.remove(playerData.Items, i)
+			end
 			break
 		end
 	end
@@ -52,7 +63,7 @@ function InventoryService:RemoveItem(player: Player, item: Item)
 	self.Client.InventoryChanged:Fire(player, playerData.Items)
 end
 
-function InventoryService.Client:RemoveItem(player: Player, item: Item)
+function InventoryService.Client:RemoveItem(player: Player, item: table)
 	self.Server:RemoveItem(player, item)
 end
 

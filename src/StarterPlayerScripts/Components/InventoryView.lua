@@ -54,20 +54,22 @@ end
 
 function InventoryView:Update(inventoryItems: table, onRemoveRequest: (item: table) -> ())
 	-- Mark all existing items as not updated
-	for guid, _ in pairs(self.ExistingItems) do
-		self.ExistingItems[guid] = false
-		local itemFrame = self.ScrollingFrame:FindFirstChild(guid)
+	for itemID, _ in pairs(self.ExistingItems) do
+		self.ExistingItems[itemID] = false
+		local itemFrame = self.ScrollingFrame:FindFirstChild("Item_" .. itemID)
 		if itemFrame then
 			itemFrame:SetAttribute("ToRemove", true)
 		end
 	end
 
 	for _, item: table in inventoryItems do
-		local itemFrame = self.ScrollingFrame:FindFirstChild(item.GUID)
+		local frameName = "Item_" .. item.ItemID
+		local itemFrame = self.ScrollingFrame:FindFirstChild(frameName)
+		
 		if not itemFrame then
 			-- Create new item frame
 			itemFrame = Instance.new("Frame")
-			itemFrame.Name = item.GUID
+			itemFrame.Name = frameName
 			itemFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
 			itemFrame.BackgroundTransparency = 0
 			itemFrame.BorderSizePixel = 0
@@ -100,6 +102,21 @@ function InventoryView:Update(inventoryItems: table, onRemoveRequest: (item: tab
 			itemNameLabel.TextScaled = true
 			itemNameLabel.Parent = itemFrame
 
+			-- Quantity Badge
+			local quantityLabel = Instance.new("TextLabel")
+			quantityLabel.Name = "QuantityLabel"
+			quantityLabel.Size = UDim2.fromOffset(25, 20)
+			quantityLabel.Position = UDim2.new(0, 5, 0, 5)
+			quantityLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+			quantityLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+			quantityLabel.Font = Enum.Font.GothamBold
+			quantityLabel.TextSize = 14
+			quantityLabel.Parent = itemFrame
+
+			local qtyCorner = Instance.new("UICorner")
+			qtyCorner.CornerRadius = UDim.new(0, 4)
+			qtyCorner.Parent = quantityLabel
+
 			-- Create x button to remove item from inventory
 			local removeButton = Instance.new("TextButton")
 			removeButton.Parent = itemFrame
@@ -125,8 +142,16 @@ function InventoryView:Update(inventoryItems: table, onRemoveRequest: (item: tab
 			self:CreateHoverLabel(itemFrame, ItemsEnum[item.ItemID].Description)
 		end
 
+		-- Update Quantity
+		local qLabel = itemFrame:FindFirstChild("QuantityLabel")
+		if qLabel then
+			local qty = item.Quantity or 1
+			qLabel.Text = "x" .. tostring(qty)
+			qLabel.Visible = qty > 1
+		end
+
 		-- Mark the item as updated
-		self.ExistingItems[item.GUID] = true
+		self.ExistingItems[item.ItemID] = true
 		itemFrame:SetAttribute("ToRemove", false)
 	end
 

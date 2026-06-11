@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ContextActionService = game:GetService("ContextActionService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
+local StarterGui = game:GetService("StarterGui")
 
 local Knit = require(ReplicatedStorage.Packages.Knit)
 local Signal = require(ReplicatedStorage.Packages.Signal)
@@ -12,7 +13,7 @@ local InventoryView = require(script.Parent.Parent.Components.InventoryView)
 
 -- Constants
 local INVENTORY_TOGGLE_ACTION_NAME = "ToggleInventory"
-local TOGGLE_KEY_PC = Enum.KeyCode.M -- Testing with M instead of Tab
+local TOGGLE_KEY_PC = Enum.KeyCode.Tab
 local TOGGLE_KEY_GAMEPAD = Enum.KeyCode.ButtonY
 
 local InventoryController = Knit.CreateController({
@@ -21,6 +22,11 @@ local InventoryController = Knit.CreateController({
 })
 
 function InventoryController:KnitStart()
+	-- Disable the PlayerList to free up the TAB key
+	pcall(function()
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+	end)
+
 	local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 	local inventoryGui = playerGui:WaitForChild("InventoryGui")
 	
@@ -47,9 +53,9 @@ function InventoryController:KnitStart()
 		self.View:Toggle()
 	end
 
-	-- Direct Input Fallback for PC (Bypasses CoreScript sinking of Tab)
+	-- Direct Input handler for PC
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
-		if gameProcessed then return end
+		-- We ignore gameProcessed ONLY for TAB if it's being sunk by core scripts
 		if input.KeyCode == TOGGLE_KEY_PC then
 			toggleInventory()
 		end
