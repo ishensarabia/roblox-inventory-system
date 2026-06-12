@@ -35,6 +35,3 @@ The GUI is located at `StarterGui.InventoryGui`. The visual style of item frames
 - **PC:** `M`
 - **Gamepad:** `ButtonY`
 - **Mobile:** Tap the inventory icon.
-
----
-*Created with the help of Gemini CLI.*
